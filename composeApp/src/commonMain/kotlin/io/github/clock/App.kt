@@ -1,16 +1,16 @@
 package io.github.clock
 
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.HourglassBottom
 import androidx.compose.material.icons.filled.LockClock
 import androidx.compose.material.icons.filled.Watch
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.window.core.layout.WindowSizeClass
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 enum class AppDestinations(
@@ -25,7 +25,7 @@ enum class AppDestinations(
 
 @Composable
 @Preview
-fun App() {
+fun App(windowSizeClass: WindowSizeClass = currentWindowAdaptiveInfo().windowSizeClass) {
     AppTheme {
 
         var currentDestination by remember { mutableStateOf(AppDestinations.CLOCK) }
@@ -50,9 +50,9 @@ fun App() {
 
             ) {
                 when(currentDestination) {
-                    AppDestinations.CLOCK -> ClockPage()
-                    AppDestinations.STOPWATCH -> StopwatchPage()
-                    AppDestinations.TIMER -> TimerPage()
+                    AppDestinations.CLOCK -> ClockPage(windowSizeClass = windowSizeClass)
+                    AppDestinations.STOPWATCH -> StopwatchPage(windowSizeClass = windowSizeClass)
+                    AppDestinations.TIMER -> TimerPage(windowSizeClass = windowSizeClass)
                 }
             }
 
