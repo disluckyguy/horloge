@@ -52,7 +52,10 @@ kotlin {
             implementation("org.jetbrains.compose.material3.adaptive:adaptive-layout:1.0.0-alpha03")
             implementation("org.jetbrains.compose.material3.adaptive:adaptive-navigation:1.0.0-alpha03")
             implementation("org.jetbrains.androidx.navigation:navigation-compose:2.8.0-alpha09")
-            implementation("org.jetbrains.compose.material3:material3-adaptive-navigation-suite:1.7.0-beta02")
+            implementation("org.jetbrains.compose.material3:material3-window-size-class:1.7.0")
+            implementation("org.jetbrains.androidx.navigation:navigation-compose:2.8.0-alpha10")
+            implementation("org.jetbrains.compose.material:material-navigation:1.7.0-beta02")
+            implementation(compose.material3AdaptiveNavigationSuite)
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)

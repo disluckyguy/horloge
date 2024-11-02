@@ -1,49 +1,45 @@
 package io.github.clock
 
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.Card
-import androidx.compose.material3.Icon
-import androidx.compose.material3.LargeFloatingActionButton
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.graphics.drawscope.Fill
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.window.core.layout.WindowSizeClass
 import kotlinx.coroutines.delay
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
-data class Date(val time: String, val pm: Boolean, val date: String)
-
-data class WorldClock(val continent: String, val city: String, var date: Date)
+data class Date(
+    val time: String,
+    val pm: Boolean,
+    val date: String,
+    val continent: String,
+    val city: String
+)
 
 fun getCurrentDate(): Date {
     val zone = TimeZone.currentSystemDefault()
     val now = Clock.System.now().toLocalDateTime(zone)
 
+    val (continent, city) = zone.id.split("/")
     val daySliced =
         now.dayOfWeek.name.slice(0..2).lowercase().replaceFirstChar { c -> c.uppercase() }
     val monthSliced =
@@ -55,147 +51,53 @@ fun getCurrentDate(): Date {
     return Date(
         "$hours:${if (now.minute < 10) "0" + now.minute.toString() else now.minute}",
         pm,
-        "$daySliced, $monthSliced ${now.dayOfMonth}"
+        "$daySliced, $monthSliced ${now.dayOfMonth}",
+        continent,
+        city
     )
-}
-
-fun getDateForWorldClock(worldClock: WorldClock): Date {
-    val zone = TimeZone.of("${worldClock.continent}/${worldClock.city}")
-    val now = Clock.System.now()
-    val localTime = now.toLocalDateTime(zone)
-
-    val daySliced =
-        localTime.dayOfWeek.name.slice(0..2).lowercase().replaceFirstChar { c -> c.uppercase() }
-    val monthSliced =
-        localTime.month.name.slice(0..2).lowercase().replaceFirstChar { c -> c.uppercase() }
-    val hours = if (localTime.hour >= 13) localTime.hour - 12 else localTime.hour
-    //val hours = localTime.hour
-    
-    val pm = localTime.hour >= 12
-    return Date(
-        "$hours:${if (localTime.minute < 10) "0" + localTime.minute.toString() else localTime.minute}",
-        pm,
-        "$daySliced, $monthSliced ${localTime.dayOfMonth}"
-    )
-
-
-}
-
-fun getDateForTimeZone(timeZone: TimeZone): Date {
-    val now = Clock.System.now()
-    val localTime = now.toLocalDateTime(timeZone)
-
-    val daySliced =
-        localTime.dayOfWeek.name.slice(0..2).lowercase().replaceFirstChar { c -> c.uppercase() }
-    val monthSliced =
-        localTime.month.name.slice(0..2).lowercase().replaceFirstChar { c -> c.uppercase() }
-    //val hours = if (now.hour >= 13) now.hour - 12 else now.hour
-    val hours = if (localTime.hour >= 13) localTime.hour - 12 else localTime.hour
-
-    val pm = localTime.hour >= 12
-    return Date(
-        "$hours:${if (localTime.minute < 10) "0" + localTime.minute.toString() else localTime.minute}",
-        pm,
-        "$daySliced, $monthSliced ${localTime.dayOfMonth}"
-    )
-
-
 }
 
 @Composable
 fun ClockPage(windowSizeClass: WindowSizeClass) {
     var date by remember { mutableStateOf(getCurrentDate()) }
-
-    val worldClocks = remember { mutableStateListOf<WorldClock>() }
-
-    worldClocks.add(WorldClock("Africa", "Cairo", getDateForTimeZone(TimeZone.of("Africa/Cairo"))))
-    worldClocks.add(WorldClock("Africa", "Cairo", getDateForTimeZone(TimeZone.of("Africa/Cairo"))))
-
-
-    Box(Modifier.fillMaxSize()) {
-
-        LazyColumn {
-            item {
-                Box(Modifier.padding(12.dp)) {
-                    Column(
-                        modifier = Modifier.fillMaxWidth().padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-
-                        LaunchedEffect(true) { // Restart the effect when the pulse rate changes
-                            while (true) {
-                                delay(1000) // Pulse the alpha every pulseRateMs to alert the user
-                                date = getCurrentDate()
-                            }
-                        }
-                        Row(verticalAlignment = Alignment.Bottom) {
-                            Text(date.time, style = TextStyle(fontSize = 64.sp))
-                            Text(
-                                if (date.pm) "PM" else "AM",
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.padding(bottom = 10.dp)
-                            )
-                        }
-
-
-
-                        Text(
-                            date.date,
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            }
-
-            item {
-                Spacer(modifier = Modifier.height(20.dp))
-            }
-            for ((index, clock) in worldClocks.withIndex()) {
-                item {
-                    Box(Modifier.padding(8.dp)) {
-                        Card {
-                            Column(
-                                modifier = Modifier.fillMaxWidth().padding(20.dp),
-                            ) {
-
-                                LaunchedEffect(true) { // Restart the effect when the pulse rate changes
-                                    while (true) {
-                                        delay(1000)
-                                        val updatedClock = clock.copy(date = getDateForWorldClock(clock))
-                                        // Pulse the alpha every pulseRateMs to alert the user
-                                        worldClocks[index] = updatedClock
-                                    }
-                                }
-
-                                Text(
-                                    text = "${clock.date.time} ${if (clock.date.pm) "PM" else "AM"}",
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Bold
-                                )
-
-                                Text(
-                                    text = "${clock.city}, ${clock.continent}",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-                    }
-                }
-            }
+    val isDarkTheme = isSystemInDarkTheme()
+    LaunchedEffect(1) {
+        while (true) {
+            date = getCurrentDate()
+            delay(1000)
         }
-        Box(Modifier.padding(12.dp).align(Alignment.BottomCenter)) {
-            LargeFloatingActionButton(
-                onClick = {},
-                shape = CircleShape
-            ) {
-                Icon(
-                    Icons.Default.Add,
-                    contentDescription = "Add World Clock"
+    }
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.size(250.dp)) {
+            Canvas(modifier = Modifier) {
+                drawCircle(
+                    color = if (isDarkTheme) {
+                        onSecondaryDark
+                    } else onSecondaryLight,
+                    radius = 100f,
+                    style = Fill,
                 )
             }
+            Canvas(modifier = Modifier) {
+                drawCircle(
+                    color = if (isDarkTheme) {
+                        outlineDark
+                    } else outlineLight,
+                    radius = 105f,
+                    style = Stroke(width = 5f),
+                )
+            }
+            Text(
+                text = date.time,
+                style = MaterialTheme.typography.displayLarge,
+                fontWeight = FontWeight.Bold
+            )
         }
+        Text("${date.city}, ${date.continent}", style = MaterialTheme.typography.displaySmall)
     }
 
 

@@ -1,4 +1,5 @@
 package io.github.clock
+
 import androidx.compose.ui.graphics.Color
 
 val primaryLight = Color(0xFF106681)
