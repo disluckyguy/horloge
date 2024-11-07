@@ -41,7 +41,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -59,6 +61,8 @@ enum class TimerScreen(val title: String) {
     Create("create"),
     Timers("timers")
 }
+
+data class Timer(val time: Long, var remainingTime: Long)
 
 fun addNumberToTime(oldTime: String, added: Int): String {
     val stripped = oldTime.replace(":", "")
@@ -97,7 +101,7 @@ fun formatTime(millis: Long): String {
     }
     val minuteString = if (minutes < 10 && hours > 0) "0$minutes" else minutes.toString()
     val secondString = if (seconds < 10 && minutes > 0) "0$seconds" else seconds.toString()
-    if (hours > 0) {
+    if (minutes > 0) {
         timeString.append("${minuteString}:")
     }
     timeString.append(secondString)
@@ -140,7 +144,7 @@ fun stringToMilliseconds(timeString: String): Long {
     val minutes = parts[1].toLong()
     val seconds = parts[2].toLong()
 
-    return (hours * 3600 + minutes * 60 + seconds) * 1000
+    return ((hours * 3600) + (minutes * 60) + seconds) * 1000
 
 }
 
@@ -162,7 +166,7 @@ fun removeNumberFromTime(time: String): String {
 
 @Composable
 fun TimerPage(windowSizeClass: WindowSizeClass) {
-    val timers = remember { mutableStateListOf<Long>() }
+    val timers = rememberSaveable { mutableStateListOf<Timer>() }
     val navController = rememberNavController()
     NavHost(
         navController = navController,
@@ -179,7 +183,7 @@ fun TimerPage(windowSizeClass: WindowSizeClass) {
 @Composable
 fun CreateTimer(
     navController: NavController,
-    timers: MutableList<Long>,
+    timers: SnapshotStateList<Timer>,
     windowSizeClass: WindowSizeClass
 ) {
     var time by remember { mutableStateOf("00:00:00") }
@@ -214,7 +218,7 @@ fun CreateTimerWide(
     onTimeChange: (String) -> Unit,
     showStartButton: Boolean,
     onStartChange: (Boolean) -> Unit,
-    timers: MutableList<Long>
+    timers: SnapshotStateList<Timer>
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -256,7 +260,7 @@ fun CreateTimerWide(
                 FilledTonalButton(
                     modifier = Modifier.padding(4.dp).requiredSize(60.dp),
                     onClick = {
-                        onTimeChange(addNumberToTime(time, 0))
+                        onTimeChange(addNumberToTime(time, 3))
                         onStartChange(time == "00:00:00")
                     },
                     shape = CircleShape,
@@ -364,7 +368,8 @@ fun CreateTimerWide(
                     shape = CircleShape,
                     onClick = {
                         navController.navigate("timers")
-                        timers.add(stringToMilliseconds(time))
+                        val timeInt = stringToMilliseconds(time)
+                        timers.add(Timer(timeInt, timeInt))
                     }) {
                     Icon(
                         Icons.Rounded.PlayArrow,
@@ -383,7 +388,7 @@ fun CreateTimerCompact(
     onTimeChange: (String) -> Unit,
     showStartButton: Boolean,
     onStartChange: (Boolean) -> Unit,
-    timers: MutableList<Long>
+    timers: SnapshotStateList<Timer>
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -425,7 +430,7 @@ fun CreateTimerCompact(
                 FilledTonalButton(
                     modifier = Modifier.padding(4.dp).requiredSize(60.dp),
                     onClick = {
-                        onTimeChange(addNumberToTime(time, 0))
+                        onTimeChange(addNumberToTime(time, 3))
                         onStartChange(time == "00:00:00")
                     },
                     shape = CircleShape,
@@ -531,8 +536,9 @@ fun CreateTimerCompact(
                     modifier = Modifier.requiredSize(100.dp).padding(10.dp),
                     shape = CircleShape,
                     onClick = {
+                        val timeInt = stringToMilliseconds(time)
+                        timers.add(Timer(timeInt, timeInt))
                         navController.navigate("timers")
-                        timers.add(stringToMilliseconds(time))
                     }) {
                     Icon(
                         Icons.Rounded.PlayArrow,
@@ -548,7 +554,7 @@ fun CreateTimerCompact(
 @Composable
 fun TimersList(
     navController: NavController,
-    timers: MutableList<Long>
+    timers: SnapshotStateList<Timer>,
 ) {
     Box {
 
@@ -557,8 +563,23 @@ fun TimersList(
             modifier = Modifier.fillMaxSize()
         ) {
 
-            for (timer in timers) {
+            for ((i, timer) in timers.withIndex()) {
                 item {
+                    var remainingTime by rememberSaveable { mutableStateOf(timer.remainingTime) }
+                    var paused by remember { mutableStateOf(false) }
+                    var currentProgress by remember { mutableStateOf(1f - (remainingTime.toFloat() / timer.time)) }
+                    LaunchedEffect(1) {
+                        while (remainingTime > 0) {
+                            delay(1000)
+                            if (paused) continue
+                            remainingTime -= 1000
+                            timer.remainingTime = remainingTime
+                            currentProgress =
+                                1f - (remainingTime.toFloat() / timer.time)
+                            println("update")
+                        }
+
+                    }
                     Card(modifier = Modifier.height(240.dp).fillMaxWidth().padding(10.dp)) {
                         Box {
                             FilledTonalIconButton(
@@ -567,7 +588,8 @@ fun TimersList(
                                     if (timers.size - 1 == 0) {
                                         navController.navigate("create")
                                     }
-                                    timers.remove(timer)
+                                    timers.removeAt(i)
+                                    
                                 },
                                 shape = CircleShape,
                                 modifier = Modifier.align(Alignment.TopEnd)
@@ -582,22 +604,9 @@ fun TimersList(
                                 modifier = Modifier.fillMaxSize(),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                val time = remember { mutableStateOf(timer) }
-                                var remainingTime by remember { mutableStateOf(time.value) }
-                                var paused by remember { mutableStateOf(false) }
-                                var currentProgress by remember { mutableStateOf(1f - (remainingTime.toFloat() / time.value)) }
 
 
-                                LaunchedEffect(key1 = Unit) {
-                                    while (remainingTime > 0) {
 
-                                        delay(1000)
-                                        if (paused) continue
-                                        remainingTime -= 1000
-                                        currentProgress =
-                                            1f - (remainingTime.toFloat() / time.value)
-                                    }
-                                }
                                 Box {
                                     CircularProgressIndicator(
                                         modifier = Modifier.width(200.dp).height(200.dp)
@@ -629,7 +638,7 @@ fun TimersList(
                                     }
 
                                     FilledIconButton(onClick = {
-                                        remainingTime = time.value
+                                        remainingTime = timer.time
                                     }, Modifier.padding(15.dp)) {
                                         Icon(
                                             Icons.Rounded.Refresh,

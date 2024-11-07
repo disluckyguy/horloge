@@ -99,6 +99,4 @@ fun ClockPage(windowSizeClass: WindowSizeClass) {
         }
         Text("${date.city}, ${date.continent}", style = MaterialTheme.typography.displaySmall)
     }
-
-
 }
