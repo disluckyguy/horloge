@@ -1,4 +1,4 @@
-package io.github.clock
+package io.github.horloge
 
 import android.os.Build
 

@@ -1,4 +1,4 @@
-package io.github.clock
+package io.github.horloge
 
 class JVMPlatform: Platform {
     override val name: String = "Java ${System.getProperty("java.version")}"

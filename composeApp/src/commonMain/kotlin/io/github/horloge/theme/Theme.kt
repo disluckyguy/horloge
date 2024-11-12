@@ -1,5 +1,4 @@
-package io.github.clock
-
+package io.github.horloge.theme
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -249,10 +248,15 @@ val unspecified_scheme = ColorFamily(
 )
 
 @Composable
-fun AppTheme(content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = if (isSystemInDarkTheme()) darkScheme else lightScheme,
-        content = content,
-    )
+fun AppTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    content: @Composable () -> Unit,
+) {
+  val colorScheme = when {
+      darkTheme -> darkScheme
+      else -> lightScheme
+  }
+
+  MaterialTheme(colorScheme, content = content)
 }
 

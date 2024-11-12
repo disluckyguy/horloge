@@ -1,4 +1,4 @@
-package io.github.clock.ui.theme
+package io.github.horloge.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

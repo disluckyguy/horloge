@@ -1,4 +1,4 @@
-package io.github.clock
+package io.github.horloge
 
 import java.awt.Dimension
 import androidx.compose.ui.window.Window
